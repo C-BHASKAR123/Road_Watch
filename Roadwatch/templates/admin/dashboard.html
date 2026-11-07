@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Admin dashboard — RoadWatch{% endblock %}
+{% block body_class %}admin-page{% endblock %}
+
+{% block content %}
+  <section class="dashboard-hero">
+    <div class="container">
+      <div class="dashboard-heading">
+        <div>
+          <p class="eyebrow eyebrow-light">Admin workspace</p>
+          <h1>Report queue</h1>
+          <p>Review incoming issues, keep the public timeline current, and record internal follow-up.</p>
+        </div>
+        <div class="dashboard-user">
+          <span class="avatar">A</span>
+          <div>
+            <span>Admin workspace</span>
+            <strong>RoadWatch</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-card">
+          <span class="stat-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M5 4h14v16H5z"></path>
+              <path d="M8 8h8M8 12h8M8 16h5"></path>
+            </svg>
+          </span>
+          <div><span>Total reports</span><strong>{{ stats.total }}</strong></div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon stat-icon-amber" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="8.5"></circle>
+              <path d="M12 7v5l3 2"></path>
+            </svg>
+          </span>
+          <div><span>Open reports</span><strong>{{ stats.open }}</strong></div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon stat-icon-red" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M12 3 2.8 20h18.4L12 3Z"></path>
+              <path d="M12 9v4M12 16.5v.2"></path>
+            </svg>
+          </span>
+          <div><span>High priority</span><strong>{{ stats.urgent }}</strong></div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon stat-icon-green" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="8.5"></circle>
+              <path d="m8 12 2.5 2.5L16.5 8"></path>
+            </svg>
+          </span>
+          <div><span>Resolved</span><strong>{{ stats.resolved }}</strong></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-tight">
+    <div class="container">
+      <form class="filters-card admin-filters" action="{{ url_for('admin_dashboard') }}" method="get" role="search">
+        <div class="field filter-search">
+          <label for="q">Search the queue</label>
+          <div class="input-with-icon">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5"></circle>
+              <path d="m16 16 4.2 4.2"></path>
+            </svg>
+            <input id="q" name="q" type="search" value="{{ filters.q }}" placeholder="Tracking number, reporter, street, or city" maxlength="100">
+          </div>
+        </div>
+        <div class="field">
+          <label for="status">Status</label>
+          <select id="status" name="status">
+            <option value="">All statuses</option>
+            {% for status in statuses %}
+              <option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>{{ status }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="issue_type">Issue type</label>
+          <select id="issue_type" name="issue_type">
+            <option value="">All issues</option>
+            {% for issue in issue_types %}
+              <option value="{{ issue }}" {% if filters.issue_type == issue %}selected{% endif %}>{{ issue }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="severity">Severity</label>
+          <select id="severity" name="severity">
+            <option value="">All levels</option>
+            {% for severity in severities %}
+              <option value="{{ severity }}" {% if filters.severity == severity %}selected{% endif %}>{{ severity }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-actions">
+          <button class="button button-primary" type="submit">Apply filters</button>
+          {% if has_filters %}
+            <a class="button button-ghost" href="{{ url_for('admin_dashboard') }}">Clear</a>
+          {% endif %}
+        </div>
+      </form>
+
+      <div class="results-bar">
+        <p>
+          {% if pagination.total %}
+            Showing <strong>{{ pagination.start }}–{{ pagination.end }}</strong> of
+            <strong>{{ pagination.total }}</strong> report{% if pagination.total != 1 %}s{% endif %}
+          {% else %}
+            No reports found
+          {% endif %}
+        </p>
+        <a class="text-link" href="{{ url_for('public_reports') }}">Open public view <span aria-hidden="true">&nearr;</span></a>
+      </div>
+
+      {% if reports %}
+        <div class="admin-list">
+          {% for report in reports %}
+            <article class="admin-report">
+              <div class="admin-report-top">
+                <div class="admin-thumb">
+                  {% if report['photo_filename'] %}
+                    <img src="{{ url_for('static', filename='uploads/' ~ report['photo_filename']) }}" alt="Photo of {{ report['issue_type']|lower }} on {{ report['road_name'] }}" loading="lazy">
+                  {% else %}
+                    <span aria-hidden="true">
+                      <svg viewBox="0 0 64 64" width="32" height="32" fill="none" stroke="currentColor" stroke-width="3">
+                        <path d="M25 53 30 11h4l5 42"></path>
+                        <path d="M31 40h2M32 29h1"></path>
+                      </svg>
+                    </span>
+                  {% endif %}
+                </div>
+
+                <div class="admin-report-copy">
+                  <div class="admin-report-kicker">
+                    <span class="status-badge status-{{ report['status']|status_slug }}">{{ report['status'] }}</span>
+                    <span class="severity-pill severity-pill-{{ report['severity']|lower }}">{{ report['severity'] }}</span>
+                    <span class="tracking-mini">{{ report['tracking_number'] }}</span>
+                  </div>
+                  <h2><a href="{{ url_for('report_detail', tracking_number=report['tracking_number']) }}">{{ report['road_name'] }}</a></h2>
+                  <p class="admin-location">{{ report['location'] }}, {{ report['city'] }} · {{ report['issue_type'] }}</p>
+                  <p class="admin-description">{{ report['description'] }}</p>
+                  <div class="admin-meta">
+                    <span><strong>Reported</strong> {{ report['created_at']|readable_datetime }}</span>
+                    <span><strong>By</strong> {{ report['reporter_name'] }}</span>
+                    {% if report['reporter_email'] %}
+                      <span><strong>Email</strong> <a href="mailto:{{ report['reporter_email'] }}">{{ report['reporter_email'] }}</a></span>
+                    {% endif %}
+                    {% if report['reporter_phone'] %}
+                      <span><strong>Phone</strong> <a href="tel:{{ report['reporter_phone'] }}">{{ report['reporter_phone'] }}</a></span>
+                    {% endif %}
+                  </div>
+                  {% if report['admin_note'] %}
+                    <p class="internal-note"><strong>Internal note:</strong> {{ report['admin_note'] }}</p>
+                  {% endif %}
+                </div>
+
+                <div class="admin-report-links">
+                  <a class="button button-small button-ghost" href="{{ url_for('report_detail', tracking_number=report['tracking_number']) }}">Public page</a>
+                </div>
+              </div>
+
+              <details class="admin-update">
+                <summary>
+                  <span>Review and update</span>
+                  <span class="summary-hint">Change status, add a public update, or save a private note</span>
+                </summary>
+                <form action="{{ url_for('admin_update_report', report_id=report['id']) }}" method="post">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="next" value="{{ request.full_path }}">
+
+                  <div class="admin-update-grid">
+                    <div class="field">
+                      <label for="status-{{ report['id'] }}">Status</label>
+                      <select id="status-{{ report['id'] }}" name="status" required>
+                        {% for status in statuses %}
+                          <option value="{{ status }}" {% if report['status'] == status %}selected{% endif %}>{{ status }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="public-note-{{ report['id'] }}">Public update note <span class="label-note">optional</span></label>
+                      <textarea id="public-note-{{ report['id'] }}" name="public_note" rows="3" maxlength="1000" placeholder="This appears on the report timeline."></textarea>
+                    </div>
+                    <div class="field">
+                      <label for="admin-note-{{ report['id'] }}">Internal note <span class="label-note">private</span></label>
+                      <textarea id="admin-note-{{ report['id'] }}" name="admin_note" rows="3" maxlength="2000" placeholder="Only visible to administrators.">{{ report['admin_note'] or '' }}</textarea>
+                    </div>
+                  </div>
+
+                  <div class="admin-update-footer">
+                    <p>Saving a new status adds an entry to the public timeline automatically.</p>
+                    <button class="button button-primary" type="submit">Save update</button>
+                  </div>
+                </form>
+              </details>
+            </article>
+          {% endfor %}
+        </div>
+
+        {% if pagination.pages > 1 %}
+          <nav class="pagination" aria-label="Admin report pages">
+            {% if pagination.has_prev %}
+              <a class="pagination-link" href="{{ url_for('admin_dashboard', page=pagination.prev_page, q=filters.q, status=filters.status, issue_type=filters.issue_type, severity=filters.severity) }}">&larr; Previous</a>
+            {% else %}
+              <span class="pagination-link is-disabled">&larr; Previous</span>
+            {% endif %}
+            <span class="pagination-status">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+            {% if pagination.has_next %}
+              <a class="pagination-link" href="{{ url_for('admin_dashboard', page=pagination.next_page, q=filters.q, status=filters.status, issue_type=filters.issue_type, severity=filters.severity) }}">Next &rarr;</a>
+            {% else %}
+              <span class="pagination-link is-disabled">Next &rarr;</span>
+            {% endif %}
+          </nav>
+        {% endif %}
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M5 4h14v16H5z"></path>
+              <path d="M8 8h8M8 12h8M8 16h5"></path>
+            </svg>
+          </div>
+          <h2>Nothing in this view</h2>
+          <p>There are no reports matching those filters right now.</p>
+          {% if has_filters %}
+            <a class="button button-primary" href="{{ url_for('admin_dashboard') }}">Clear filters</a>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

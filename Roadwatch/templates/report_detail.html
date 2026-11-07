@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}{{ report['road_name'] }} — RoadWatch{% endblock %}
+{% block body_class %}report-detail-page{% endblock %}
+
+{% block content %}
+  <section class="detail-hero">
+    <div class="container">
+      <a class="back-link" href="{{ url_for('public_reports') }}"><span aria-hidden="true">&larr;</span> All public reports</a>
+      <div class="detail-heading">
+        <div>
+          <div class="detail-kicker">
+            <span class="status-badge status-{{ report['status']|status_slug }}">{{ report['status'] }}</span>
+            <span class="severity-pill severity-pill-{{ report['severity']|lower }}">{{ report['severity'] }} severity</span>
+            <span class="issue-label">{{ report['issue_type'] }}</span>
+          </div>
+          <h1>{{ report['road_name'] }}</h1>
+          <p class="detail-location">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path>
+              <circle cx="12" cy="10" r="2.5"></circle>
+            </svg>
+            {{ report['location'] }}, {{ report['city'] }}
+          </p>
+        </div>
+        <div class="detail-tracking">
+          <span>Tracking number</span>
+          <strong>{{ report['tracking_number'] }}</strong>
+          <button class="button button-small button-ghost" type="button" data-copy="{{ report['tracking_number'] }}">Copy</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container detail-layout">
+      <div class="detail-main">
+        {% if report['photo_filename'] %}
+          <figure class="detail-photo">
+            <img src="{{ url_for('static', filename='uploads/' ~ report['photo_filename']) }}" alt="Photo of {{ report['issue_type']|lower }} on {{ report['road_name'] }}">
+          </figure>
+        {% endif %}
+
+        <article class="card detail-card">
+          <h2>About this report</h2>
+          <p class="description-text">{{ report['description'] }}</p>
+
+          <dl class="detail-facts">
+            <div>
+              <dt>Issue</dt>
+              <dd>{{ report['issue_type'] }}</dd>
+            </div>
+            <div>
+              <dt>Severity</dt>
+              <dd><span class="severity-text severity-text-{{ report['severity']|lower }}">{{ report['severity'] }}</span></dd>
+            </div>
+            <div>
+              <dt>Reported</dt>
+              <dd>{{ report['created_at']|readable_datetime }}</dd>
+            </div>
+            <div>
+              <dt>Last updated</dt>
+              <dd>{{ report['updated_at']|readable_datetime }}</dd>
+            </div>
+          </dl>
+
+          <div class="detail-actions">
+            <a class="button button-ghost" href="{{ maps_url }}" target="_blank" rel="noopener noreferrer">
+              Open location in Maps
+              <span aria-hidden="true">&nearr;</span>
+            </a>
+            <a class="button button-ghost" href="{{ url_for('index') }}#tracker">Track another report</a>
+          </div>
+        </article>
+      </div>
+
+      <div class="detail-sidebar">
+        <div class="card status-card">
+          <p class="eyebrow">Current status</p>
+          <div class="current-status status-panel-{{ report['status']|status_slug }}">
+            <span class="status-pulse" aria-hidden="true"></span>
+            <strong>{{ report['status'] }}</strong>
+          </div>
+          <p class="status-help">
+            {% if report['status'] == 'Submitted' %}
+              The report has been received and is waiting for review.
+            {% elif report['status'] == 'Under Review' %}
+              A reviewer is checking the details and location.
+            {% elif report['status'] == 'In Progress' %}
+              The issue has been accepted and work is underway.
+            {% elif report['status'] == 'Resolved' %}
+              The issue has been marked as resolved.
+            {% else %}
+              This report is not currently active.
+            {% endif %}
+          </p>
+
+          <div class="timeline-wrap">
+            <h2>Updates</h2>
+            <ol class="timeline">
+              {% for update in updates %}
+                <li class="timeline-item">
+                  <span class="timeline-dot timeline-dot-{{ update['status']|status_slug }}" aria-hidden="true"></span>
+                  <div class="timeline-content">
+                    <div class="timeline-head">
+                      <strong>{{ update['status'] }}</strong>
+                      <time datetime="{{ update['created_at'] }}">{{ update['created_at']|readable_datetime }}</time>
+                    </div>
+                    {% if update['note'] %}
+                      <p>{{ update['note'] }}</p>
+                    {% endif %}
+                    {% if update['admin_username'] %}
+                      <span class="timeline-author">RoadWatch team</span>
+                    {% endif %}
+                  </div>
+                </li>
+              {% endfor %}
+            </ol>
+          </div>
+        </div>
+
+        <div class="help-card">
+          <h2>Spotted something else?</h2>
+          <p>Submit a separate report so each location can be tracked clearly.</p>
+          <a class="text-link" href="{{ url_for('index') }}#report-form">Report another issue <span aria-hidden="true">&rarr;</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

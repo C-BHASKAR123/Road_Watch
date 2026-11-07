@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Account settings — RoadWatch{% endblock %}
+{% block body_class %}account-page{% endblock %}
+
+{% block content %}
+  <section class="section section-tight account-section">
+    <div class="container account-shell">
+      <div class="account-heading">
+        <p class="eyebrow">Admin account</p>
+        <h1>Account settings</h1>
+        <p>Manage your contact email, choose a strong password, and connect Google sign-in.</p>
+      </div>
+
+      <div class="account-grid">
+        <section class="card account-card" aria-labelledby="profile-heading">
+          <h2 id="profile-heading">Profile</h2>
+          <p class="account-subtitle">Your username is used to sign in and cannot be changed here.</p>
+
+          <dl class="account-meta">
+            <div>
+              <dt>Username</dt>
+              <dd>{{ admin.username }}</dd>
+            </div>
+            <div>
+              <dt>Google sign-in</dt>
+              <dd>{% if admin.google_sub %}Connected{% else %}Not connected{% endif %}</dd>
+            </div>
+          </dl>
+
+          <form action="{{ url_for('update_account_email') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+              <label for="email">Contact email</label>
+              <input id="email" name="email" type="email" value="{{ admin.email or '' }}" autocomplete="email" maxlength="254" placeholder="name@example.com">
+              <p class="field-help">Used for password reset links and to match your Google account.</p>
+            </div>
+            <button class="button button-primary" type="submit">Save email</button>
+          </form>
+        </section>
+
+        <section class="card account-card" aria-labelledby="password-heading">
+          <h2 id="password-heading">Change password</h2>
+          <p class="account-subtitle">Enter your current password, then choose a new one and re-enter it.</p>
+
+          <form action="{{ url_for('update_account_password') }}" method="post" data-password-form>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+              <label for="current_password">Current password</label>
+              <input id="current_password" name="current_password" type="password" autocomplete="current-password" required>
+            </div>
+
+            <div class="field">
+              <label for="new_password">New strong password</label>
+              <input id="new_password" name="new_password" type="password" autocomplete="new-password" minlength="12" required data-password-input>
+              <div class="password-meter" aria-hidden="true"><span data-password-meter></span></div>
+              <ul class="password-rules" data-password-rules>
+                {% for rule in password_rules %}
+                  <li>{{ rule }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+
+            <div class="field">
+              <label for="confirm_password">Re-enter new password</label>
+              <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" minlength="12" required data-password-confirm>
+              <p class="field-feedback" data-password-match hidden>Passwords do not match yet.</p>
+            </div>
+
+            <button class="button button-primary" type="submit">Update password</button>
+          </form>
+        </section>
+      </div>
+
+      <section class="card account-card account-card-wide" aria-labelledby="google-heading">
+        <h2 id="google-heading">Google sign-in</h2>
+        {% if admin.google_sub %}
+          <p>This account is linked to Google. You can sign in with the Google button on the sign-in page or keep using your username and password.</p>
+        {% elif google_signin_enabled %}
+          <p>Google sign-in is available. Save the same email address you use for Google, sign out, then choose <strong>Continue with Google</strong> to link the account.</p>
+        {% else %}
+          <p>Google sign-in is not configured yet. The site owner can enable it with these environment variables:</p>
+          <ul class="account-setup">
+            <li><code>GOOGLE_CLIENT_ID</code> — from Google Cloud Console</li>
+            <li><code>GOOGLE_CLIENT_SECRET</code> — from Google Cloud Console</li>
+            <li><code>ROADWATCH_GOOGLE_ALLOWED_EMAILS</code> — optional comma-separated list of emails allowed to create an account</li>
+          </ul>
+          <p class="account-note">Add <code>{{ url_for('google_callback', _external=True) }}</code> as an authorized redirect URI in the Google Cloud OAuth client.</p>
+        {% endif %}
+      </section>
+
+      <p class="account-back"><a class="text-link" href="{{ url_for('admin_dashboard') }}"><span aria-hidden="true">&larr;</span> Back to the report queue</a></p>
+    </div>
+  </section>
+{% endblock %}

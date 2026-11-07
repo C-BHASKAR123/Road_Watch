@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="RoadWatch helps communities report potholes, damaged roads, waterlogging, and other road safety problems.">
+  <meta name="theme-color" content="#14231f">
+  <title>{% block title %}RoadWatch — Report road problems{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/roadwatch-logo.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <header class="site-header">
+    <div class="container nav-shell">
+      <a class="brand" href="{{ url_for('index') }}" aria-label="RoadWatch home">
+        <img src="{{ url_for('static', filename='images/roadwatch-logo.svg') }}" alt="" width="42" height="42">
+        <span class="brand-name">Road<span>Watch</span></span>
+      </a>
+
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" data-nav-toggle>
+        <span class="nav-toggle-label">Menu</span>
+        <span class="nav-toggle-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+      </button>
+
+      <nav class="site-nav" id="site-nav" aria-label="Primary navigation">
+        <a href="{{ url_for('index') }}#report-form" class="{% if request.endpoint == 'index' %}is-active{% endif %}">Report an issue</a>
+        <a href="{{ url_for('public_reports') }}" class="{% if request.endpoint in ('public_reports', 'report_detail', 'report_submitted') %}is-active{% endif %}">Public reports</a>
+        <a href="{{ url_for('index') }}#tracker">Track a report</a>
+        <a href="{{ url_for('admin_dashboard') }}" class="{% if request.endpoint == 'admin_dashboard' %}is-active{% endif %}">Admin dashboard</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="container flash-stack" role="status" aria-live="polite">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">
+              <span class="flash-marker" aria-hidden="true"></span>
+              <p>{{ message }}</p>
+              <button class="flash-close" type="button" aria-label="Dismiss message" data-dismiss-flash>&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <div class="footer-brand-mark">
+          <a class="brand brand-light" href="{{ url_for('index') }}">
+            <img src="{{ url_for('static', filename='images/roadwatch-logo.svg') }}" alt="" width="38" height="38">
+            <span class="brand-name">Road<span>Watch</span></span>
+          </a>
+        </div>
+        <p>Community road reports, in one place. Built for safer journeys.</p>
+      </div>
+      <div class="footer-links">
+        <h2>Report</h2>
+        <a href="{{ url_for('index') }}#report-form">Report a road issue</a>
+        <a href="{{ url_for('index') }}#tracker">Track a report</a>
+      </div>
+      <div class="footer-links">
+        <h2>Explore</h2>
+        <a href="{{ url_for('public_reports') }}">Public reports</a>
+        <a href="{{ url_for('admin_dashboard') }}">Admin dashboard</a>
+        <a href="{{ url_for('download_source') }}">Download source code</a>
+      </div>
+    </div>
+    <div class="container footer-bottom">
+      <p>&copy; {{ current_year }} RoadWatch. Report emergencies to local emergency services.</p>
+      <p>Built with Flask &amp; SQLite.</p>
+    </div>
+  </footer>
+</body>
+</html>

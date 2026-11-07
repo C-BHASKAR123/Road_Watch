@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}RoadWatch — Report a road problem{% endblock %}
+{% block body_class %}home-page{% endblock %}
+
+{% block content %}
+  {% set selected_severity = form.get('severity') or 'Medium' %}
+  <section class="hero">
+    <div class="hero-road" aria-hidden="true"></div>
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow eyebrow-light"><span class="eyebrow-dot"></span> Community road reporting</p>
+        <h1>Better roads start with <span class="text-highlight">one report.</span></h1>
+        <p class="hero-lead">
+          Spotted a pothole, broken streetlight, or flooded street? Tell us where it is.
+          Your report helps the community see what needs fixing — and gives crews a clear place to start.
+        </p>
+        <div class="hero-actions">
+          <a class="button button-primary button-large" href="#report-form">
+            Report a road issue
+            <span aria-hidden="true">&rarr;</span>
+          </a>
+          <a class="button button-ghost button-large" href="{{ url_for('public_reports') }}">Browse reports</a>
+        </div>
+
+        <dl class="hero-stats" aria-label="RoadWatch community statistics">
+          <div>
+            <dt>Reports shared</dt>
+            <dd>{{ stats.total }}</dd>
+          </div>
+          <div>
+            <dt>Open reports</dt>
+            <dd>{{ stats.open }}</dd>
+          </div>
+          <div>
+            <dt>Resolved</dt>
+            <dd>{{ stats.resolved }}</dd>
+          </div>
+          <div>
+            <dt>Cities &amp; areas</dt>
+            <dd>{{ stats.cities }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <aside class="tracker-card" id="tracker" aria-labelledby="tracker-title">
+        <div class="tracker-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="11" cy="11" r="6.5"></circle>
+            <path d="m16 16 4.2 4.2"></path>
+          </svg>
+        </div>
+        <p class="eyebrow eyebrow-dark">Already reported?</p>
+        <h2 id="tracker-title">Track your report</h2>
+        <p>Enter the tracking number you received when you submitted the issue.</p>
+        <form class="tracker-form" action="{{ url_for('track_report') }}" method="get">
+          <label for="tracking_number">Tracking number</label>
+          <div class="input-button-row">
+            <input id="tracking_number" name="tracking_number" type="text" placeholder="RW-20261102-ABC12" autocomplete="off" spellcheck="false" required>
+            <button class="button button-primary" type="submit">Track</button>
+          </div>
+        </form>
+
+        <div class="tracker-divider"></div>
+        <h3>How it works</h3>
+        <ol class="mini-steps">
+          <li><span>1</span><p><strong>Send the details.</strong> Add the location, issue, and a photo if you can.</p></li>
+          <li><span>2</span><p><strong>Get a tracking number.</strong> Use it any time to see the latest status.</p></li>
+          <li><span>3</span><p><strong>Follow the progress.</strong> Updates appear on the public report timeline.</p></li>
+        </ol>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section report-section" id="report-form">
+    <div class="container report-layout">
+      <div class="section-intro">
+        <p class="eyebrow">Report a problem</p>
+        <h2>Tell us what is happening on the road.</h2>
+        <p>
+          Useful reports are specific. Mention the nearest landmark, the direction of travel,
+          and how serious the problem feels.
+        </p>
+        <ul class="check-list">
+          <li>One issue per report</li>
+          <li>Add a clear photo when it is safe to do so</li>
+          <li>Never stop in traffic or enter a closed road to take a photo</li>
+        </ul>
+        <div class="safety-note">
+          <strong>Emergency?</strong>
+          <p>If a road problem is causing immediate danger, contact your local emergency services first.</p>
+        </div>
+      </div>
+
+      <form class="card form-card" action="{{ url_for('submit_report') }}" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <fieldset class="form-section">
+          <legend>
+            <span class="step-number">01</span>
+            <span>
+              <strong>Your details</strong>
+              <small>We only use these to follow up on the report. They are not shown publicly.</small>
+            </span>
+          </legend>
+          <div class="form-grid">
+            <div class="field field-full">
+              <label for="reporter_name">Your name <span aria-hidden="true">*</span></label>
+              <input id="reporter_name" name="reporter_name" type="text" value="{{ form.get('reporter_name', '') }}" maxlength="100" autocomplete="name" required>
+            </div>
+            <div class="field">
+              <label for="reporter_email">Email <span class="label-note">optional</span></label>
+              <input id="reporter_email" name="reporter_email" type="email" value="{{ form.get('reporter_email', '') }}" maxlength="254" autocomplete="email" placeholder="you@example.com">
+            </div>
+            <div class="field">
+              <label for="reporter_phone">Phone <span class="label-note">optional</span></label>
+              <input id="reporter_phone" name="reporter_phone" type="tel" value="{{ form.get('reporter_phone', '') }}" maxlength="30" autocomplete="tel" placeholder="+91 98765 43210">
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+          <legend>
+            <span class="step-number">02</span>
+            <span>
+              <strong>Where is the problem?</strong>
+              <small>The more precise the location, the easier it is to act on.</small>
+            </span>
+          </legend>
+          <div class="form-grid">
+            <div class="field field-full">
+              <label for="road_name">Road or street name <span aria-hidden="true">*</span></label>
+              <input id="road_name" name="road_name" type="text" value="{{ form.get('road_name', '') }}" maxlength="160" placeholder="e.g. MG Road, near the metro station" required>
+            </div>
+            <div class="field">
+              <label for="location">Nearest landmark or address <span aria-hidden="true">*</span></label>
+              <input id="location" name="location" type="text" value="{{ form.get('location', '') }}" maxlength="200" placeholder="e.g. Opposite City Mall" required>
+            </div>
+            <div class="field">
+              <label for="city">City or area <span aria-hidden="true">*</span></label>
+              <input id="city" name="city" type="text" value="{{ form.get('city', '') }}" maxlength="100" placeholder="e.g. Bengaluru" required>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset class="form-section">
+          <legend>
+            <span class="step-number">03</span>
+            <span>
+              <strong>What did you find?</strong>
+              <small>Choose the closest match and tell us what you saw.</small>
+            </span>
+          </legend>
+          <div class="form-grid">
+            <div class="field field-full">
+              <label for="issue_type">Issue type <span aria-hidden="true">*</span></label>
+              <select id="issue_type" name="issue_type" required>
+                <option value="" {% if not form.get('issue_type') %}selected{% endif %} disabled>Select an issue type</option>
+                {% for issue in issue_types %}
+                  <option value="{{ issue }}" {% if form.get('issue_type') == issue %}selected{% endif %}>{{ issue }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <fieldset class="field field-full severity-field">
+              <legend>How serious is it? <span aria-hidden="true">*</span></legend>
+              <div class="severity-grid">
+                {% for severity in severities %}
+                  <label class="severity-card severity-{{ severity|lower }}">
+                    <input type="radio" name="severity" value="{{ severity }}" {% if selected_severity == severity %}checked{% endif %} required>
+                    <span class="severity-dot" aria-hidden="true"></span>
+                    <span class="severity-copy">
+                      <strong>{{ severity }}</strong>
+                      <small>{{ severity_help[severity] }}</small>
+                    </span>
+                  </label>
+                {% endfor %}
+              </div>
+            </fieldset>
+
+            <div class="field field-full">
+              <div class="label-row">
+                <label for="description">Description <span aria-hidden="true">*</span></label>
+                <span class="label-note" data-description-count>0 / 3000</span>
+              </div>
+              <textarea id="description" name="description" rows="5" maxlength="3000" minlength="10" placeholder="Describe the size, position, and any risk it creates. For example: a deep pothole in the left lane just after the junction." required>{{ form.get('description', '') }}</textarea>
+            </div>
+
+            <div class="field field-full">
+              <span class="field-label" id="photo-label">Photo <span class="label-note">optional</span></span>
+              <label class="file-drop" for="photo">
+                <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/gif,image/webp" data-file-input aria-labelledby="photo-label">
+                <span class="file-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="3" y="4" width="18" height="16" rx="3"></rect>
+                    <circle cx="9" cy="9" r="1.6"></circle>
+                    <path d="m4 17 5-5 4 4 2-2 5 5"></path>
+                  </svg>
+                </span>
+                <span class="file-copy">
+                  <strong>Choose a photo</strong>
+                  <small>JPG, PNG, GIF, or WebP · up to 8 MB</small>
+                  <span class="file-name" data-file-name>No photo selected</span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </fieldset>
+
+        <div class="form-footer">
+          <p>By submitting, you confirm this report is accurate and may be shown publicly. Your contact details stay private.</p>
+          <button class="button button-primary button-large" type="submit">
+            Submit report
+            <span aria-hidden="true">&rarr;</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  {% if recent %}
+    <section class="section recent-section">
+      <div class="container">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Community activity</p>
+            <h2>Latest reports</h2>
+          </div>
+          <a class="text-link" href="{{ url_for('public_reports') }}">View all reports <span aria-hidden="true">&rarr;</span></a>
+        </div>
+        <div class="report-grid">
+          {% for report in recent %}
+            <article class="report-card">
+              <a class="report-card-media" href="{{ url_for('report_detail', tracking_number=report['tracking_number']) }}" aria-label="View report: {{ report['road_name'] }}, {{ report['status'] }} status">
+                {% if report['photo_filename'] %}
+                  <img src="{{ url_for('static', filename='uploads/' ~ report['photo_filename']) }}" alt="Photo of {{ report['issue_type']|lower }} on {{ report['road_name'] }}" loading="lazy">
+                {% else %}
+                  <span class="report-card-placeholder" aria-hidden="true">
+                    <svg viewBox="0 0 64 64" width="48" height="48" fill="none" stroke="currentColor" stroke-width="3">
+                      <path d="M25 53 30 11h4l5 42"></path>
+                      <path d="M31 40h2M32 29h1"></path>
+                    </svg>
+                  </span>
+                {% endif %}
+                <span class="status-badge status-{{ report['status']|status_slug }}">{{ report['status'] }}</span>
+              </a>
+              <div class="report-card-body">
+                <div class="report-card-meta">
+                  <span>{{ report['issue_type'] }}</span>
+                  <span>{{ report['created_at']|readable_datetime }}</span>
+                </div>
+                <h3><a href="{{ url_for('report_detail', tracking_number=report['tracking_number']) }}">{{ report['road_name'] }}</a></h3>
+                <p class="report-location">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"></path>
+                    <circle cx="12" cy="10" r="2.5"></circle>
+                  </svg>
+                  {{ report['location'] }}{% if report['city'] %}, {{ report['city'] }}{% endif %}
+                </p>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+  {% endif %}
+{% endblock %}
